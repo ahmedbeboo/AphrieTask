@@ -162,8 +162,12 @@ namespace AphrieTask
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
+            // ---- if you want to log in file 
+            //var path = Directory.GetCurrentDirectory();
+            //loggerFactory.AddFile($"{path}\\Log.txt");
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -194,11 +198,6 @@ namespace AphrieTask
             app.UseCookiePolicy();
 
 
-            
-            
-
-
-
             try
             {
                 using (var serviceScope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>()
@@ -213,12 +212,11 @@ namespace AphrieTask
                 // -------------------------------
                 // I'm using Serilog here, but use the logging solution of your choice.
                 throw ex;
-
             }
 
             //Add our new middleware to the pipeline
             app.UseMiddleware<RequestResponseLoggingMiddleware>();
-            //app.UseRequestResponseLogging();
+            app.UseMiddleware<ExceptionMiddleware>();
 
 
             app.UseEndpoints(endpoints =>

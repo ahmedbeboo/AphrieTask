@@ -85,11 +85,17 @@ namespace AphrieTask.CustomMiddlewares
             //------------ TODO: Save log to chosen datastore
 
             string userClaims = "";
-            foreach (var item in context.User.Claims)
+            string userInfo = "";
+
+            if (context.User.Claims.Count() > 0)
             {
-                userClaims += "Type: " + item.Type + " , Value: " + item.Value + ". ";
+                foreach (var item in context.User.Claims)
+                {
+                    userClaims += "Type: " + item.Type + " , Value: " + item.Value + ". ";
+                }
+
+                userInfo = @"Info: " + userClaims;
             }
-            string userInfo = @"Info: " + userClaims;
 
             Log log = new Log();
             log.CreatedDate = DateTime.Now;
