@@ -3,13 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30330.147
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AphrieTask", "AphrieTask\AphrieTask.csproj", "{020D83AB-CD59-463E-98CC-AF1386A91891}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AphrieTask", "AphrieTask\AphrieTask.csproj", "{020D83AB-CD59-463E-98CC-AF1386A91891}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Entities", "Entities\Entities.csproj", "{73C4DAE9-E6D8-41D2-A9F8-D1A00458785B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Entities", "Entities\Entities.csproj", "{73C4DAE9-E6D8-41D2-A9F8-D1A00458785B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Repository", "Repository\Repository.csproj", "{19B08DF9-5CA0-480C-A3A8-3F55805E4A97}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Repository", "Repository\Repository.csproj", "{19B08DF9-5CA0-480C-A3A8-3F55805E4A97}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services", "Services\Services.csproj", "{40F19A9E-4561-47C2-8072-5C29F6359809}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services", "Services\Services.csproj", "{40F19A9E-4561-47C2-8072-5C29F6359809}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

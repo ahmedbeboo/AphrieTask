@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using AphrieTask.BE;
+using AphrieTask.CustomMiddlewares;
 using AphrieTask.Manager;
 using AutoMapper;
 using Entities;
@@ -216,7 +217,8 @@ namespace AphrieTask
             }
 
             //Add our new middleware to the pipeline
-            //app.UseMiddleware<Middlewares.RequestResponseLoggingMiddleware>();
+            app.UseMiddleware<RequestResponseLoggingMiddleware>();
+            //app.UseRequestResponseLogging();
 
 
             app.UseEndpoints(endpoints =>
