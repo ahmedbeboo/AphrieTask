@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AphrieTask.BE;
 using AphrieTask.Manager;
 using Entities;
+using Entities.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Repository;
@@ -101,6 +102,8 @@ namespace AphrieTask.Controllers
 
         }
 
+
+
         [HttpPost("AddNewPost")]
         public IActionResult AddNewPost([FromBody] BE.PostLocalizeInfo postLocalizeInfo)
         {
@@ -155,7 +158,11 @@ namespace AphrieTask.Controllers
                 }
 
                 var res = _postManager.AddNewPostInteraction(postInteraction);
-                return Ok(res);
+
+                if (res)
+                    return Ok(res);
+
+                return BadRequest(res);
             }
             catch
             {
@@ -184,12 +191,24 @@ namespace AphrieTask.Controllers
 
             try
             {
-                _postManager.RemovePost(postId);
+                var deleted = _postManager.RemovePost(postId);
 
-                result.result = true;
-                result.Msg = "your post has been deleted";
+                if (deleted)
+                {
+                    result.result = true;
+                    result.Msg = "your post has been deleted";
 
-                return Ok(result);
+                    return Ok(result);
+
+                }
+                else
+                {
+                    result.result = true;
+                    result.Msg = "your post has not been deleted";
+
+                    return BadRequest(result);
+
+                }
             }
             catch
             {
@@ -199,6 +218,103 @@ namespace AphrieTask.Controllers
         }
 
 
+        [HttpDelete("DeletePostInteraction/{postInteractionId}")]
+        public IActionResult DeletePostInteraction(Guid postInteractionId)
+        {
+            PostAdditionResult result = new PostAdditionResult();
 
+            try
+            {
+                var deleted = _postManager.RemovePostInteraction(postInteractionId);
+
+                if (deleted)
+                {
+                    result.result = true;
+                    result.Msg = "your post has been deleted";
+
+                    return Ok(result);
+
+                }
+                else
+                {
+                    result.result = true;
+                    result.Msg = "your post has not been deleted";
+
+                    return BadRequest(result);
+
+                }
+            }
+            catch
+            {
+                result.result = false;
+                return BadRequest(result);
+            }
+        }
+
+        [HttpPut("EditPostInteraction")]
+        public IActionResult EditPostInteraction([FromBody] PostInteraction postInteraction)
+        {
+            PostAdditionResult result = new PostAdditionResult();
+
+            try
+            {
+                var edited = _postManager.EditPostInteraction(postInteraction);
+
+                if (edited)
+                {
+                    result.result = true;
+                    result.Msg = "your Interact has been Edited";
+
+                    return Ok(result);
+
+                }
+                else
+                {
+                    result.result = true;
+                    result.Msg = "your Interact has not been Edited";
+
+                    return BadRequest(result);
+
+                }
+            }
+            catch
+            {
+                result.result = false;
+                return BadRequest(result);
+            }
+        }
+
+
+        [HttpPut("EditPostInteractionReact/{postInteractionId}/{reactId}")]
+        public IActionResult EditPostInteractionReact(Guid postInteractionId, Reacts reactId)
+        {
+            PostAdditionResult result = new PostAdditionResult();
+
+            try
+            {
+                var Edited = _postManager.EditPostInteractionReact(postInteractionId, reactId);
+
+                if (Edited)
+                {
+                    result.result = true;
+                    result.Msg = "your React has been Edited";
+
+                    return Ok(result);
+                }
+                else
+                {
+                    result.result = true;
+                    result.Msg = "your React has not been Edited";
+
+                    return Ok(result);
+                }
+
+            }
+            catch
+            {
+                result.result = false;
+                return BadRequest(result);
+            }
+        }
     }
 }

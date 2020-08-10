@@ -85,13 +85,45 @@ namespace AphrieTask.Manager
         {
             try
             {
-                _postInteractionRepository.Insert(postInteraction);
-                return true;
+                List<Guid> PostsICanInteract = GetPostsCanInteract(postInteraction.userInteractId);
+
+                if (PostsICanInteract.Contains(postInteraction.postId))
+                {
+                    _postInteractionRepository.Insert(postInteraction);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
             catch
             {
                 return false;
             }
+        }
+
+        public List<Guid> GetPostsCanInteract(Guid profileID)
+        {
+            var friendsIdsWhoICanSee = GetMyCurrentlyFriendsAsync(profileID).Result;
+
+            List<Guid> postCanInteractIds = new List<Guid>();
+            try
+            {
+                var posts = _postRepository.Where(p => friendsIdsWhoICanSee.Contains(p.profileId) && !p.isDeleted).Result.ToList();
+
+                foreach (var post in posts)
+                {
+                    postCanInteractIds.Add(post.Id);
+                }
+
+                return postCanInteractIds;
+            }
+            catch
+            {
+                return null;
+            }
+
         }
 
         public List<PostLocalizeInfo> GetPostsCanSee(Guid profileID, string language)
@@ -173,7 +205,7 @@ namespace AphrieTask.Manager
 
         }
 
-        internal void RemovePost(Guid id)
+        internal bool RemovePost(Guid id)
         {
             try
             {
@@ -196,8 +228,60 @@ namespace AphrieTask.Manager
                     _postInteractionRepository.Update(item);
                 }
 
+                return true;
             }
-            catch { }
+            catch {
+                return false;
+            }
+
+
+        }
+        internal bool RemovePostInteraction(Guid id)
+        {
+            try
+            {
+                var PostInteractions = _postInteractionRepository.Where(p => p.Id == id).Result.FirstOrDefault();
+                PostInteractions.isDeleted = true;
+                _postInteractionRepository.Update(PostInteractions);
+
+                return true;
+
+            }
+            catch {
+                return false;
+            }
+
+
+        }
+
+
+        internal bool EditPostInteraction(PostInteraction postInteraction)
+        {
+            try
+            {
+                _postInteractionRepository.Update(postInteraction);
+                return true;
+            }
+            catch {
+                return false;
+            }
+
+
+        }
+
+        internal bool EditPostInteractionReact(Guid postInteractionId,Reacts react)
+        {
+            try
+            {
+                var PostInteractions = _postInteractionRepository.Where(p => p.Id == postInteractionId).Result.FirstOrDefault();
+                PostInteractions.postReact = react;
+                _postInteractionRepository.Update(PostInteractions);
+
+                return true;
+            }
+            catch {
+                return false;
+            }
 
 
         }
