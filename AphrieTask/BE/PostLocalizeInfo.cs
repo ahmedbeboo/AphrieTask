@@ -12,5 +12,6 @@ namespace AphrieTask.BE
 
         public List<LoacalizProperty> localizeInfo { get; set; }
 
+        public List<PostInteraction> postInteractions { get; set; }
     }
 }

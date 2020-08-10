@@ -29,5 +29,9 @@ namespace Entities
         public Guid userInteractId { get; set; }
         [JsonProperty("UserInteract")]
         public Profile UserInteract { get; set; }
+
+
+        [JsonProperty("isDeleted")]
+        public bool isDeleted { get; set; }
     }
 }

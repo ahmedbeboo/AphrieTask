@@ -1,6 +1,7 @@
 ﻿using AphrieTask.BE;
 using Entities;
 using Entities.Enums;
+using Microsoft.AspNetCore.SignalR;
 using Repository;
 using System;
 using System.Collections.Generic;
@@ -27,7 +28,7 @@ namespace AphrieTask.Manager
             _postInteractionRepository = postInteractionRepository;
         }
 
-        public List<PostLocalizeInfo> GetMyPosts(Guid profileID,string language)
+        public List<PostLocalizeInfo> GetMyPosts(Guid profileID, string language)
         {
             List<PostLocalizeInfo> postLocalizeInfoList = new List<PostLocalizeInfo>();
             try
@@ -36,13 +37,21 @@ namespace AphrieTask.Manager
 
                 foreach (var post in posts)
                 {
-                    var LocalizeInfo = _loacalizPropertyRepository.Where(p => p.localizeEntityId == post.Id&& p.localizeLanguge.languageName.ToLower() == language.ToLower()).Result.ToList();
+                    var LocalizeInfo = _loacalizPropertyRepository.Where(p => p.localizeEntityId == post.Id && p.localizeLanguge.languageName.ToLower() == language.ToLower()&&!p.isDeleted).Result.ToList();
 
                     PostLocalizeInfo postLocalizeInfo = new PostLocalizeInfo();
                     postLocalizeInfo.postInfo = post;
                     postLocalizeInfo.localizeInfo = LocalizeInfo;
 
-                    postLocalizeInfoList.Add(postLocalizeInfo);
+
+                    if (LocalizeInfo.Count > 0 && LocalizeInfo != null)
+                    {
+                        var postInteractions = _postInteractionRepository.Where(p => p.postId == post.Id).Result.ToList();
+                        postLocalizeInfo.postInteractions = postInteractions;
+                        
+                        postLocalizeInfoList.Add(postLocalizeInfo);
+
+                    }
                 }
 
                 return postLocalizeInfoList;
@@ -58,6 +67,11 @@ namespace AphrieTask.Manager
             try
             {
                 _postRepository.Insert(post.postInfo);
+
+                foreach (var item in post.localizeInfo)
+                {
+                    item.localizeEntityId = post.postInfo.Id;
+                }
                 _loacalizPropertyRepository.InsertRange(post.localizeInfo);
                 return true;
             }
@@ -80,7 +94,7 @@ namespace AphrieTask.Manager
             }
         }
 
-        public List<PostLocalizeInfo> GetPostsCanSee(Guid profileID,string language)
+        public List<PostLocalizeInfo> GetPostsCanSee(Guid profileID, string language)
         {
             var friendsIdsWhoICanSee = GetMyCurrentlyFriendsAsync(profileID).Result;
 
@@ -91,13 +105,20 @@ namespace AphrieTask.Manager
 
                 foreach (var post in posts)
                 {
-                    var LocalizeInfo = _loacalizPropertyRepository.Where(p => p.localizeEntityId == post.Id&& p.localizeLanguge.languageName.ToLower()==language.ToLower()).Result.ToList();
+                    var LocalizeInfo = _loacalizPropertyRepository.Where(p => p.localizeEntityId == post.Id && p.localizeLanguge.languageName.ToLower() == language.ToLower()).Result.ToList();
 
                     PostLocalizeInfo postLocalizeInfo = new PostLocalizeInfo();
                     postLocalizeInfo.postInfo = post;
                     postLocalizeInfo.localizeInfo = LocalizeInfo;
 
-                    postLocalizeInfoList.Add(postLocalizeInfo);
+                    if (LocalizeInfo.Count > 0 && LocalizeInfo != null)
+                    {
+                        var postInteractions = _postInteractionRepository.Where(p => p.postId == post.Id).Result.ToList();
+                        postLocalizeInfo.postInteractions = postInteractions;
+
+
+                        postLocalizeInfoList.Add(postLocalizeInfo);
+                    }
                 }
 
                 return postLocalizeInfoList;
@@ -107,6 +128,18 @@ namespace AphrieTask.Manager
                 return null;
             }
 
+        }
+
+        public List<PostInteraction> GetPostInteraction(Guid postId)
+        {
+            try
+            {
+                return _postInteractionRepository.Where(p => p.postId == postId && !p.isDeleted).Result.ToList();
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private async Task<List<Guid>> GetMyCurrentlyFriendsAsync(Guid? clientId)
@@ -142,17 +175,30 @@ namespace AphrieTask.Manager
 
         internal void RemovePost(Guid id)
         {
-            var post = _postRepository.GetById(id).Result;
-            post.isDeleted = true;
-            _postRepository.Update(post);
-
-            var LocalizeInfo = _loacalizPropertyRepository.Where(p => p.localizeEntityId == post.Id).Result.ToList();
-
-            foreach (var item in LocalizeInfo)
+            try
             {
-                item.isDeleted = true;
-                _loacalizPropertyRepository.Update(item);
+                var post = _postRepository.GetById(id).Result;
+                post.isDeleted = true;
+                _postRepository.Update(post);
+
+                var LocalizeInfo = _loacalizPropertyRepository.Where(p => p.localizeEntityId == post.Id).Result.ToList();
+
+                foreach (var item in LocalizeInfo)
+                {
+                    item.isDeleted = true;
+                    _loacalizPropertyRepository.Update(item);
+                }
+
+                var PostInteractions = _postInteractionRepository.Where(p => p.postId == post.Id).Result.ToList();
+                foreach (var item in PostInteractions)
+                {
+                    item.isDeleted = true;
+                    _postInteractionRepository.Update(item);
+                }
+
             }
+            catch { }
+
 
         }
 

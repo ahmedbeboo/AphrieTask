@@ -61,7 +61,7 @@ namespace AphrieTask.Controllers
                     return Unauthorized();
                 }
 
-                var res = _postManager.GetMyPosts(profileID,language);
+                var res = _postManager.GetMyPosts(profileID, language);
                 return Ok(res);
             }
             catch
@@ -91,7 +91,7 @@ namespace AphrieTask.Controllers
                     return Unauthorized();
                 }
 
-                var res = _postManager.GetPostsCanSee(profileID,language);
+                var res = _postManager.GetPostsCanSee(profileID, language);
                 return Ok(res);
             }
             catch
@@ -104,7 +104,7 @@ namespace AphrieTask.Controllers
         [HttpPost("AddNewPost")]
         public IActionResult AddNewPost([FromBody] BE.PostLocalizeInfo postLocalizeInfo)
         {
-            
+
             PostAdditionResult result = new PostAdditionResult();
 
             try
@@ -120,8 +120,17 @@ namespace AphrieTask.Controllers
 
                 var res = _postManager.AddNewPost(postLocalizeInfo);
                 result.result = res;
-                result.Msg = "your post has been added";
 
+                if (res)
+                {
+                    result.Msg = "your post has been added";
+
+                }
+                else
+                {
+                    result.Msg = "Can not add this post";
+
+                }
                 return Ok(result);
             }
             catch
@@ -146,6 +155,20 @@ namespace AphrieTask.Controllers
                 }
 
                 var res = _postManager.AddNewPostInteraction(postInteraction);
+                return Ok(res);
+            }
+            catch
+            {
+                return BadRequest();
+            }
+        }
+
+        [HttpPost("GetPostInteraction/{postId}")]
+        public IActionResult GetPostInteraction(Guid postId)
+        {
+            try
+            {
+                var res = _postManager.GetPostInteraction(postId);
                 return Ok(res);
             }
             catch

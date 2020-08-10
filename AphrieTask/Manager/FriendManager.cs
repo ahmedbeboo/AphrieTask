@@ -29,6 +29,25 @@ namespace AphrieTask.Manager
             _emailSender = new EmailSender();
         }
 
+
+        private string toEnglishNumber(string input)
+        {
+            string EnglishNumbers = "";
+
+            for (int i = 0; i < input.Length; i++)
+            {
+                if (Char.IsDigit(input[i]))
+                {
+                    EnglishNumbers += char.GetNumericValue(input, i);
+                }
+                else
+                {
+                    EnglishNumbers += input[i].ToString();
+                }
+            }
+            return EnglishNumbers;
+        }
+
         public void AddPendingFriendsInvitations(Profile newjoiner)
         {
             Guid invitedByGuid;
@@ -74,6 +93,11 @@ namespace AphrieTask.Manager
             var invitaionexists = _friendInvitationRepository.Where(x => x.SenderId == input.SenderId && x.PhoneNumber == input.PhoneNumber && x.Processed == false).Result.FirstOrDefault();
             if (invitaionexists == null)
             {
+                input.PhoneNumber = toEnglishNumber(input.PhoneNumber);
+
+                if (!input.PhoneNumber.StartsWith("+2"))
+                    input.PhoneNumber = "+2" + input.PhoneNumber;
+
                 var receiver = _profileRepository.Where(x => (x.PhoneNumber == input.PhoneNumber)).Result.FirstOrDefault();
                 var sender = _profileRepository.GetById(input.SenderId).Result;
                 if (receiver == null)
@@ -177,7 +201,7 @@ namespace AphrieTask.Manager
 
         internal async Task<List<Friend>> GetMyCurrentlyFriendsAsync(Guid? clientId)
         {
-            var navfriendProperties = new string[] { "FriendProfile" };
+            var navfriendProperties = new string[] { "ReceiverProfile" };
             var navsenderProperties = new string[] { "SenderProfile" };
             var mymadefriends = await _friendRepository.Where(x => x.SenderProfile.Id == clientId.Value &&
             x.RelationStatus == RelationStatus.Accepted, navfriendProperties);
@@ -191,7 +215,7 @@ namespace AphrieTask.Manager
 
         internal async Task<List<Friend>> GetMySentFriendRequestsAsync(Guid? clientId)
         {
-            var navProperties = new string[] { "FriendProfile" };
+            var navProperties = new string[] { "ReceiverProfile" };
 
             var myrequestlist = await _friendRepository.Where(x => x.SenderProfile.Id == clientId.Value &&
             (x.RelationStatus == RelationStatus.Pending), navProperties);
@@ -216,7 +240,7 @@ namespace AphrieTask.Manager
 
         internal void RemoveFriend(Guid id)
         {
-            var friend = GetFriendById(id).Result;
+            var friend = GetFriendshipById(id).Result;
             _friendRepository.Delete(friend);
         }
 
@@ -226,10 +250,31 @@ namespace AphrieTask.Manager
             _friendInvitationRepository.Delete(invitation);
         }
 
-        internal async Task<Friend> GetFriendById(Guid friendId)
+        internal async Task<Friend> GetFriendshipById(Guid friendshipId)
         {
-            return await _friendRepository.GetById(friendId);
+            try
+            {
+                return await _friendRepository.GetById(friendshipId);
+            }
+            catch
+            {
+                return null;
+            }
         }
+
+
+        internal async Task<Profile> GetFriendById(Guid friendId)
+        {
+            try
+            {
+                return await _profileRepository.GetById(friendId);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
 
         internal async Task<List<FriendInvitation>> GetMyFriendInvitations(Guid? ProfileId, int limit, int page)
         {
@@ -240,12 +285,23 @@ namespace AphrieTask.Manager
 
         internal async Task<FriendInvitation> GetFriendInvitationById(Guid friendId)
         {
-            return await _friendInvitationRepository.GetById(friendId);
+            try
+            {
+                return await _friendInvitationRepository.GetById(friendId);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         internal void UpdateFriend(Friend friend)
         {
-            _friendRepository.Update(friend);
+            try
+            {
+                _friendRepository.Update(friend);
+            }
+            catch { }
         }
 
 

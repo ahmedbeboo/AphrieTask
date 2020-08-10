@@ -32,7 +32,7 @@ namespace AphrieTask.Controllers
             _friendManager = new Manager.FriendManager(_friendRepository, _friendInvitationRepository, _profileRepository);
         }
 
-        [HttpGet]
+        [HttpGet("GetMyFriends")]
         public async Task<IActionResult> GetMyFriends(BE.ParametersModel parameters)
         {
             // Get the claims values
@@ -50,7 +50,7 @@ namespace AphrieTask.Controllers
             return Ok(friends);
         }
 
-        [HttpGet("Pending")]
+        [HttpGet("GetMyPendingFriends")]
         public async Task<IActionResult> GetMyPendingFriends(BE.ParametersModel parameters)
         {
             // Get the claims values
@@ -74,7 +74,7 @@ namespace AphrieTask.Controllers
             return Ok(allPending);
         }
 
-        [HttpGet("FriendInvitation")]
+        [HttpGet("GetInvitationSent")]
         public async Task<IActionResult> GetInvitationSent(BE.ParametersModel parameters)
         {
 
@@ -94,7 +94,7 @@ namespace AphrieTask.Controllers
         }
 
 
-        [HttpPost("FriendInvitation")]
+        [HttpPost("SendFriendInvitation")]
         public IActionResult SendFriendInvitation([FromBody] FriendInvitation input)
         {
 
@@ -158,7 +158,25 @@ namespace AphrieTask.Controllers
 
         }
 
-        [HttpGet("{friendId}")]
+        [HttpGet("GetFriendshipInfo/{friendshipId}")]
+        public async Task<IActionResult> GetFriendshipInfo(Guid friendshipId, BE.ParametersModel parameter)
+        {
+            // Get the claims values
+            var Claim = User.Claims.Where(c => c.Type == ClaimTypes.PrimarySid)
+                               .Select(c => c.Value).SingleOrDefault();
+
+            if (parameter.ClientId.Value.ToString() != Claim)
+            {
+                return Unauthorized();
+            }
+
+            // return friend profile 
+            Friend friend = await _friendManager.GetFriendshipById(friendshipId);
+            return Ok(friend);
+        }
+
+
+        [HttpGet("GetFriendInfo/{friendId}")]
         public async Task<IActionResult> GetFriendInfo(Guid friendId, BE.ParametersModel parameter)
         {
             // Get the claims values
@@ -171,15 +189,25 @@ namespace AphrieTask.Controllers
             }
 
             // return friend profile 
-            Friend friend = await _friendManager.GetFriendById(friendId);
+            Profile friend = await _friendManager.GetFriendById(friendId);
             return Ok(friend);
         }
 
-        [HttpPut]
+
+        [HttpPut("ChangeFriendStatus")]
         public IActionResult ChangeFriendStatus([FromBody] Friend friend)
         {
             try
             {
+                // Get the claims values
+                var Claim = User.Claims.Where(c => c.Type == ClaimTypes.PrimarySid)
+                                   .Select(c => c.Value).SingleOrDefault();
+
+                if (friend.receiverProfileId.ToString() != Claim)
+                {
+                    return Unauthorized();
+                }
+
                 // change user friend status 
                 // accept, reject, block
                 _friendManager.UpdateFriend(friend);
@@ -192,7 +220,7 @@ namespace AphrieTask.Controllers
             }
         }
 
-        [HttpDelete("{Id}")]
+        [HttpDelete("DeleteFriendRequest/{Id}")]
         public void DeleteFriendRequest(Guid Id)
         {
             _friendManager.RemoveFriend(Id);
