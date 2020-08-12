@@ -97,13 +97,9 @@ namespace AphrieTask.CustomMiddlewares
                 userInfo = @"Info: " + userClaims;
             }
 
-            Log log = new Log();
-            log.CreatedDate = DateTime.Now;
-            log.Level = Entities.Enums.LogLevel.INFO;
-            log.requestInfo = RequestInfo;
-            log.responseInfo = ResponseInfo;
-            log.userInfo = userInfo;
-            _logManager.addLog(log);
+            var log = _logManager.GetLog(Entities.Enums.LogLevel.INFO, "", RequestInfo, ResponseInfo, userInfo);
+            if (log != null)
+                _logManager.addLog(log);
 
             await responseBody.CopyToAsync(originalBodyStream);
         }

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using AphrieTask.BE;
@@ -8,6 +10,7 @@ using AphrieTask.Manager;
 using Entities;
 using Entities.Enums;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Repository;
 
@@ -18,6 +21,9 @@ namespace AphrieTask.Controllers
     [Route("api/Post")]
     public class PostController : Controller
     {
+        IWebHostEnvironment _hostingEnvironment;
+
+
         private IBaseRepository<Friend> _friendRepository;
         private IBaseRepository<Post> _postRepository;
         private IBaseRepository<PostInteraction> _postInteractionRepository;
@@ -30,8 +36,11 @@ namespace AphrieTask.Controllers
         public PostController(IBaseRepository<Friend> friendRepository,
             IBaseRepository<Post> postRepository,
             IBaseRepository<LoacalizProperty> loacalizPropertyRepository,
-            IBaseRepository<PostInteraction> postInteractionRepository)
+            IBaseRepository<PostInteraction> postInteractionRepository,
+            IWebHostEnvironment hostingEnvironment)
         {
+            _hostingEnvironment = hostingEnvironment;
+
             _friendRepository = friendRepository;
             _postRepository = postRepository;
             _loacalizPropertyRepository = loacalizPropertyRepository;
@@ -107,9 +116,56 @@ namespace AphrieTask.Controllers
         [HttpPost("AddNewPost")]
         public IActionResult AddNewPost([FromBody] BE.PostLocalizeInfo postLocalizeInfo)
         {
+            string postImagesUrl = "";
+
+            try
+            {
+                var files = Request.Form.Files;
+                
+                var folderName = Path.Combine(_hostingEnvironment.WebRootPath, "PostsImages");
+
+                if (files.Any(f => f.Length == 0))
+                {
+                    return BadRequest();
+                }
+
+                string PrefixFileName = Guid.NewGuid().ToString();
+                int fileCount = 1;
+
+                foreach (var file in files)
+                {
+                    DirectoryInfo directoryInfo = new DirectoryInfo(folderName + "/" + PrefixFileName);
+                    if (! directoryInfo.Exists)
+                    {
+                        directoryInfo.Create();
+                        folderName= Path.Combine(folderName, PrefixFileName);
+                    }
+
+                    string fileExtention= Path.GetExtension(file.FileName);
+
+
+                    var fileName = PrefixFileName+"_"+fileCount+"."+fileExtention;
+                    var fullPath = Path.Combine(folderName, fileName);
+
+                    using (var stream = new FileStream(fullPath, FileMode.Create))
+                    {
+                        file.CopyTo(stream);
+                    }
+
+                    postImagesUrl += fileName + ",";
+                    fileCount++;
+                }
+
+                if (postImagesUrl.Length>0)
+                {
+                    postImagesUrl = postImagesUrl.Remove(postImagesUrl.Length - 1);
+                }
+            }
+            catch
+            { }
+
 
             PostAdditionResult result = new PostAdditionResult();
-
             try
             {
                 // Get the claims values
@@ -121,6 +177,7 @@ namespace AphrieTask.Controllers
                     return Unauthorized();
                 }
 
+                postLocalizeInfo.postInfo.imagesUrl = postImagesUrl;
                 var res = _postManager.AddNewPost(postLocalizeInfo);
                 result.result = res;
 
@@ -144,7 +201,7 @@ namespace AphrieTask.Controllers
         }
 
         [HttpPost("AddNewPostInteraction")]
-        public IActionResult AddNewPostInteraction([FromBody] PostInteraction postInteraction)
+        public async Task<IActionResult> AddNewPostInteraction([FromBody] PostInteraction postInteraction)
         {
             try
             {
@@ -157,7 +214,7 @@ namespace AphrieTask.Controllers
                     return Unauthorized();
                 }
 
-                var res = _postManager.AddNewPostInteraction(postInteraction);
+                var res =await _postManager.AddNewPostInteraction(postInteraction);
 
                 if (res)
                     return Ok(res);
@@ -171,11 +228,11 @@ namespace AphrieTask.Controllers
         }
 
         [HttpPost("GetPostInteraction/{postId}")]
-        public IActionResult GetPostInteraction(Guid postId)
+        public async Task<IActionResult> GetPostInteraction(Guid postId)
         {
             try
             {
-                var res = _postManager.GetPostInteraction(postId);
+                var res =await _postManager.GetPostInteraction(postId);
                 return Ok(res);
             }
             catch
@@ -185,13 +242,13 @@ namespace AphrieTask.Controllers
         }
 
         [HttpDelete("DeletePost/{postId}")]
-        public IActionResult DeletePost(Guid postId)
+        public async Task<IActionResult> DeletePost(Guid postId)
         {
             PostAdditionResult result = new PostAdditionResult();
 
             try
             {
-                var deleted = _postManager.RemovePost(postId);
+                var deleted =await _postManager.RemovePost(postId);
 
                 if (deleted)
                 {
@@ -219,13 +276,13 @@ namespace AphrieTask.Controllers
 
 
         [HttpDelete("DeletePostInteraction/{postInteractionId}")]
-        public IActionResult DeletePostInteraction(Guid postInteractionId)
+        public async Task<IActionResult> DeletePostInteraction(Guid postInteractionId)
         {
             PostAdditionResult result = new PostAdditionResult();
 
             try
             {
-                var deleted = _postManager.RemovePostInteraction(postInteractionId);
+                var deleted =await _postManager.RemovePostInteraction(postInteractionId);
 
                 if (deleted)
                 {
@@ -286,13 +343,13 @@ namespace AphrieTask.Controllers
 
 
         [HttpPut("EditPostInteractionReact/{postInteractionId}/{reactId}")]
-        public IActionResult EditPostInteractionReact(Guid postInteractionId, Reacts reactId)
+        public async Task<IActionResult> EditPostInteractionReact(Guid postInteractionId, Reacts reactId)
         {
             PostAdditionResult result = new PostAdditionResult();
 
             try
             {
-                var Edited = _postManager.EditPostInteractionReact(postInteractionId, reactId);
+                var Edited =await _postManager.EditPostInteractionReact(postInteractionId, reactId);
 
                 if (Edited)
                 {

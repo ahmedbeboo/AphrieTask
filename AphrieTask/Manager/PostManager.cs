@@ -28,16 +28,16 @@ namespace AphrieTask.Manager
             _postInteractionRepository = postInteractionRepository;
         }
 
-        public List<PostLocalizeInfo> GetMyPosts(Guid profileID, string language)
+        public async Task<List<PostLocalizeInfo>> GetMyPosts(Guid profileID, string language)
         {
             List<PostLocalizeInfo> postLocalizeInfoList = new List<PostLocalizeInfo>();
             try
             {
-                var posts = _postRepository.Where(p => p.profileId == profileID && !p.isDeleted).Result.ToList();
+                var posts =await _postRepository.Where(p => p.profileId == profileID && !p.isDeleted);
 
                 foreach (var post in posts)
                 {
-                    var LocalizeInfo = _loacalizPropertyRepository.Where(p => p.localizeEntityId == post.Id && p.localizeLanguge.languageName.ToLower() == language.ToLower()&&!p.isDeleted).Result.ToList();
+                    var LocalizeInfo =await _loacalizPropertyRepository.Where(p => p.localizeEntityId == post.Id && p.localizeLanguge.languageName.ToLower() == language.ToLower()&&!p.isDeleted);
 
                     PostLocalizeInfo postLocalizeInfo = new PostLocalizeInfo();
                     postLocalizeInfo.postInfo = post;
@@ -46,7 +46,7 @@ namespace AphrieTask.Manager
 
                     if (LocalizeInfo.Count > 0 && LocalizeInfo != null)
                     {
-                        var postInteractions = _postInteractionRepository.Where(p => p.postId == post.Id).Result.ToList();
+                        var postInteractions =await _postInteractionRepository.Where(p => p.postId == post.Id);
                         postLocalizeInfo.postInteractions = postInteractions;
                         
                         postLocalizeInfoList.Add(postLocalizeInfo);
@@ -81,11 +81,11 @@ namespace AphrieTask.Manager
             }
         }
 
-        public bool AddNewPostInteraction(PostInteraction postInteraction)
+        public async Task<bool> AddNewPostInteraction(PostInteraction postInteraction)
         {
             try
             {
-                List<Guid> PostsICanInteract = GetPostsCanInteract(postInteraction.userInteractId);
+                List<Guid> PostsICanInteract =await GetPostsCanInteract(postInteraction.userInteractId);
 
                 if (PostsICanInteract.Contains(postInteraction.postId))
                 {
@@ -103,14 +103,14 @@ namespace AphrieTask.Manager
             }
         }
 
-        public List<Guid> GetPostsCanInteract(Guid profileID)
+        public async Task<List<Guid>> GetPostsCanInteract(Guid profileID)
         {
-            var friendsIdsWhoICanSee = GetMyCurrentlyFriendsAsync(profileID).Result;
+            var friendsIdsWhoICanSee =await GetMyCurrentlyFriendsAsync(profileID);
 
             List<Guid> postCanInteractIds = new List<Guid>();
             try
             {
-                var posts = _postRepository.Where(p => friendsIdsWhoICanSee.Contains(p.profileId) && !p.isDeleted).Result.ToList();
+                var posts =await _postRepository.Where(p => friendsIdsWhoICanSee.Contains(p.profileId) && !p.isDeleted);
 
                 foreach (var post in posts)
                 {
@@ -126,18 +126,18 @@ namespace AphrieTask.Manager
 
         }
 
-        public List<PostLocalizeInfo> GetPostsCanSee(Guid profileID, string language)
+        public async Task<List<PostLocalizeInfo>> GetPostsCanSee(Guid profileID, string language)
         {
-            var friendsIdsWhoICanSee = GetMyCurrentlyFriendsAsync(profileID).Result;
+            var friendsIdsWhoICanSee =await GetMyCurrentlyFriendsAsync(profileID);
 
             List<PostLocalizeInfo> postLocalizeInfoList = new List<PostLocalizeInfo>();
             try
             {
-                var posts = _postRepository.Where(p => friendsIdsWhoICanSee.Contains(p.profileId) && !p.isDeleted).Result.ToList();
+                var posts =await _postRepository.Where(p => friendsIdsWhoICanSee.Contains(p.profileId) && !p.isDeleted);
 
                 foreach (var post in posts)
                 {
-                    var LocalizeInfo = _loacalizPropertyRepository.Where(p => p.localizeEntityId == post.Id && p.localizeLanguge.languageName.ToLower() == language.ToLower()).Result.ToList();
+                    var LocalizeInfo =await _loacalizPropertyRepository.Where(p => p.localizeEntityId == post.Id && p.localizeLanguge.languageName.ToLower() == language.ToLower());
 
                     PostLocalizeInfo postLocalizeInfo = new PostLocalizeInfo();
                     postLocalizeInfo.postInfo = post;
@@ -145,7 +145,7 @@ namespace AphrieTask.Manager
 
                     if (LocalizeInfo.Count > 0 && LocalizeInfo != null)
                     {
-                        var postInteractions = _postInteractionRepository.Where(p => p.postId == post.Id).Result.ToList();
+                        var postInteractions =await _postInteractionRepository.Where(p => p.postId == post.Id);
                         postLocalizeInfo.postInteractions = postInteractions;
 
 
@@ -162,11 +162,12 @@ namespace AphrieTask.Manager
 
         }
 
-        public List<PostInteraction> GetPostInteraction(Guid postId)
+        public async Task<List<PostInteraction>> GetPostInteraction(Guid postId)
         {
             try
             {
-                return _postInteractionRepository.Where(p => p.postId == postId && !p.isDeleted).Result.ToList();
+                var postInteraction = await _postInteractionRepository.Where(p => p.postId == postId && !p.isDeleted);
+                return postInteraction;
             }
             catch
             {
@@ -205,15 +206,15 @@ namespace AphrieTask.Manager
 
         }
 
-        internal bool RemovePost(Guid id)
+        internal async Task<bool> RemovePost(Guid id)
         {
             try
             {
-                var post = _postRepository.GetById(id).Result;
+                var post =await _postRepository.GetById(id);
                 post.isDeleted = true;
                 _postRepository.Update(post);
 
-                var LocalizeInfo = _loacalizPropertyRepository.Where(p => p.localizeEntityId == post.Id).Result.ToList();
+                var LocalizeInfo =await _loacalizPropertyRepository.Where(p => p.localizeEntityId == post.Id);
 
                 foreach (var item in LocalizeInfo)
                 {
@@ -221,7 +222,7 @@ namespace AphrieTask.Manager
                     _loacalizPropertyRepository.Update(item);
                 }
 
-                var PostInteractions = _postInteractionRepository.Where(p => p.postId == post.Id).Result.ToList();
+                var PostInteractions =await _postInteractionRepository.Where(p => p.postId == post.Id);
                 foreach (var item in PostInteractions)
                 {
                     item.isDeleted = true;
@@ -236,11 +237,13 @@ namespace AphrieTask.Manager
 
 
         }
-        internal bool RemovePostInteraction(Guid id)
+        internal async Task<bool> RemovePostInteraction(Guid id)
         {
             try
             {
-                var PostInteractions = _postInteractionRepository.Where(p => p.Id == id).Result.FirstOrDefault();
+                List<PostInteraction> UserPostInteractions =await _postInteractionRepository.Where(p => p.Id == id);
+
+                var PostInteractions = UserPostInteractions.FirstOrDefault();
                 PostInteractions.isDeleted = true;
                 _postInteractionRepository.Update(PostInteractions);
 
@@ -269,11 +272,11 @@ namespace AphrieTask.Manager
 
         }
 
-        internal bool EditPostInteractionReact(Guid postInteractionId,Reacts react)
+        internal async Task<bool> EditPostInteractionReact(Guid postInteractionId,Reacts react)
         {
             try
             {
-                var PostInteractions = _postInteractionRepository.Where(p => p.Id == postInteractionId).Result.FirstOrDefault();
+                var PostInteractions =await _postInteractionRepository.GetById(postInteractionId);
                 PostInteractions.postReact = react;
                 _postInteractionRepository.Update(PostInteractions);
 

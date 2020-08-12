@@ -42,7 +42,7 @@ namespace AphrieTask.CustomMiddlewares
                 _logger.LogError($"Something went wrong: {ex}");
 
 
-                string userClaims = "";               
+                string userClaims = "";
                 string userInfo = "";
 
                 if (httpContext.User.Claims.Count() > 0)
@@ -55,15 +55,14 @@ namespace AphrieTask.CustomMiddlewares
                     userInfo = @"Info: " + userClaims;
                 }
 
-                Log log = new Log();
-                log.CreatedDate = DateTime.Now;
-                log.Level = Entities.Enums.LogLevel.ERROR;
-                log.MSG = @"Internal Server Error from the custom middleware: " + Environment.NewLine + "["
-                         + "Status Code: " +(int)HttpStatusCode.InternalServerError + Environment.NewLine
+
+                string MSG = @"Internal Server Error from the custom middleware: " + Environment.NewLine + "["
+                         + "Status Code: " + (int)HttpStatusCode.InternalServerError + Environment.NewLine
                          + "Exception Mesage: " + ex.Message
-                         +" ]";
-                log.userInfo = userInfo;
-                _logManager.addLog(log);
+                         + " ]";
+                var log = _logManager.GetLog(Entities.Enums.LogLevel.ERROR, MSG, "", "", userInfo);
+                if (log != null)
+                    _logManager.addLog(log);
 
                 await HandleExceptionAsync(httpContext, ex);
             }

@@ -95,7 +95,7 @@ namespace AphrieTask.Controllers
 
 
         [HttpPost("SendFriendInvitation")]
-        public IActionResult SendFriendInvitation([FromBody] FriendInvitation input)
+        public async Task<IActionResult> SendFriendInvitation([FromBody] FriendInvitation input)
         {
 
 
@@ -116,7 +116,7 @@ namespace AphrieTask.Controllers
 
             // for sending invitation for new user
             // if the user found on our db then send a friend request
-            int result = _friendManager.InviteFriend(input);
+            int result =await _friendManager.InviteFriend(input);
 
             if (result == 0)
             {

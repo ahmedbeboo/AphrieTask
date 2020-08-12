@@ -130,6 +130,8 @@ namespace AphrieTask
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Swagger For Aphrie API", Version = "v1", Description = "Swagger For Aphrie API Description", Contact = contact });
 
+                
+
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Name = "Authorization",
@@ -155,6 +157,8 @@ namespace AphrieTask
 
                    }
                 });
+
+                
 
                 c.OperationFilter<CustomHeaderSwaggerAttribute>();
 
@@ -188,7 +192,7 @@ namespace AphrieTask
 
             app.UseCors("CorsPolicy");
 
-
+            app.UseStaticFiles();
             app.UseStaticFiles(new StaticFileOptions()
             {
                 FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), @"wwwroot")),

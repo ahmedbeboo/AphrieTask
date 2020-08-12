@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -157,8 +158,9 @@ namespace AphrieTask.Controllers
             }
             else
             {
-                var checkMail = _profileRepository.Where(p => p.Email == input.Email).Result;
+                var checkMail =await _profileRepository.Where(p => p.Email == input.Email);
 
+                
                 if (input.Email == "" || checkMail.Count == 0)
                 {
                     if (!input.PhoneNumber.StartsWith("+2"))
@@ -169,7 +171,7 @@ namespace AphrieTask.Controllers
                         try
                         {
 
-                            input.InvitedBy = _profileManager.GetUserIdByInvitationCode(input.InvitedBy);
+                            input.InvitedBy =await _profileManager.GetUserIdByInvitationCode(input.InvitedBy);
 
                         }
                         catch
@@ -184,7 +186,8 @@ namespace AphrieTask.Controllers
                     bool isGuid = Guid.TryParse(input.InvitedBy, out invitedByGuid);
                     if (isGuid)
                     {
-                        var profile = _profileManager.GetProfileByGuid(Guid.Parse(input.InvitedBy)).Result;
+                        var profile =await _profileManager.GetProfileByGuid(Guid.Parse(input.InvitedBy));
+                        
                     }
                     _profileManager.InsertProfilePassword(input.Id, input.Password);
 
@@ -220,7 +223,7 @@ namespace AphrieTask.Controllers
             if (user != null)
             {
                 
-                var userLastRegisterAttempt = _profileManager.getLastUserRegisterAttempt(user.Id);
+                var userLastRegisterAttempt =await _profileManager.getLastUserRegisterAttempt(user.Id);
                 if(userLastRegisterAttempt != null)
                 {
                     if (user.Id == userLastRegisterAttempt.profileId && input.OTP == userLastRegisterAttempt.OTP)
@@ -229,10 +232,10 @@ namespace AphrieTask.Controllers
                         user.EmailConfirmed = true;
                         userLastRegisterAttempt.IsUsed = true;
 
-                        int updatedProfile = _profileManager.UpdateProfile(user);
+                        int updatedProfile =await _profileManager.UpdateProfile(user);
                         if (updatedProfile == 0)
                         {
-                            string token = _profileManager.verifyUser(user);
+                            string token =await _profileManager.verifyUser(user);
                             _profileManager.UpdateUserRegisterAttempt(userLastRegisterAttempt);
 
                             return Ok(token);
@@ -289,7 +292,7 @@ namespace AphrieTask.Controllers
             Profile result = await _profileManager.GetProfileByUserName(loginModel.userName);
             if (result != null && result.EmailConfirmed)
             {
-                bool correct = _profileManager.IsPasswordCorrect(result.Id, loginModel.password);
+                bool correct =await _profileManager.IsPasswordCorrect(result.Id, loginModel.password);
                 if (!correct)
                 {
                     return BadRequest("Wrong Password");
@@ -306,7 +309,7 @@ namespace AphrieTask.Controllers
         }
 
         [HttpPut]
-        public IActionResult EditProfile([FromBody] Profile input)
+        public async Task<IActionResult> EditProfile([FromBody] Profile input)
         {
             try
             {
@@ -334,13 +337,13 @@ namespace AphrieTask.Controllers
                     try
                     {
 
-                        input.InvitedBy = _profileManager.GetUserIdByInvitationCode(input.InvitedBy);
+                        input.InvitedBy =await _profileManager.GetUserIdByInvitationCode(input.InvitedBy);
 
                     }
                     catch
                     { }
                 }
-                var checkUpdate = _profileManager.UpdateProfile(input);
+                var checkUpdate =await _profileManager.UpdateProfile(input);
 
                 if (checkUpdate == 1)
                 {
@@ -362,9 +365,9 @@ namespace AphrieTask.Controllers
         }
 
         [HttpPut("ChangePassword")]
-        public IActionResult ChangePassword([FromBody] PasswordModel input)
+        public async Task<IActionResult> ChangePassword([FromBody] PasswordModel input)
         {
-            var result= _profileManager.ChangePassword(input);
+            var result=await _profileManager.ChangePassword(input);
 
             if (result)
             {

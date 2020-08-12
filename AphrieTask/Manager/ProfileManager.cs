@@ -59,15 +59,17 @@ namespace AphrieTask.Manager
             _passwordRepository.Insert(profilePassword);
         }
 
-        public bool IsPasswordCorrect(Guid profileid, string password)
+        public async Task<bool> IsPasswordCorrect(Guid profileid, string password)
         {
-            var passwordList = _passwordRepository.Where(x => x.profileId == profileid).Result.OrderByDescending(x => x.CreatedDate).ToList();
+            List<ProfilePassword> passwords =await _passwordRepository.Where(x => x.profileId == profileid);
+
+            var passwordList = passwords.OrderByDescending(x => x.CreatedDate).ToList();
             var userPassword = passwordList.FirstOrDefault();
             return VerifyHash(password, userPassword.HashPassword);
         }
 
 
-        public string verifyUser(Profile input)
+        public async Task<string> verifyUser(Profile input)
         {
             
             input.Token = GetAuthToken(input);
@@ -78,7 +80,7 @@ namespace AphrieTask.Manager
                 new FriendManager(_friendRepository, _friendInvitationRepository, _profileRepository).AddPendingFriendsInvitations(input);
 
                 // update all invitations sent to this phone number to be processed = true
-                var invitations = _friendInvitationRepository.Where(x => x.PhoneNumber == input.PhoneNumber).Result.ToList();
+                var invitations =await _friendInvitationRepository.Where(x => x.PhoneNumber == input.PhoneNumber);
                 foreach (var item in invitations)
                 {
                     item.Processed = true;
@@ -90,12 +92,13 @@ namespace AphrieTask.Manager
             return input.Token;
         }
 
-        public RegisterAttempt getLastUserRegisterAttempt(Guid profileid)
+        public async Task<RegisterAttempt> getLastUserRegisterAttempt(Guid profileid)
         {
             try
             {
-                var registerAttempt = _registerAttemptRepository.Where(r => r.profileId == profileid && !r.IsUsed).Result.OrderByDescending(r => r.CreatedDate).FirstOrDefault();
+                List<RegisterAttempt> registerAttemptList =await _registerAttemptRepository.Where(r => r.profileId == profileid && !r.IsUsed);
 
+                var registerAttempt = registerAttemptList.OrderByDescending(r => r.CreatedDate).FirstOrDefault();
                 return registerAttempt;
             }
             catch
@@ -105,13 +108,13 @@ namespace AphrieTask.Manager
 
         }
 
-        public List<RegisterAttempt> getAllUserRegisterAttempt(Guid profileid)
+        public async Task<List<RegisterAttempt>> getAllUserRegisterAttempt(Guid profileid)
         {
             try
             {
-                var registerAttempt = _registerAttemptRepository.Where(r => r.profileId == profileid).Result.OrderByDescending(r => r.CreatedDate).ToList();
+                var registerAttempt =await _registerAttemptRepository.Where(r => r.profileId == profileid);
 
-                return registerAttempt;
+                return registerAttempt.OrderByDescending(r => r.CreatedDate).ToList();
             }
             catch
             {
@@ -148,14 +151,17 @@ namespace AphrieTask.Manager
         }
 
 
-        public Task<Profile> GetProfileByGuid(Guid profileId)
+        public async Task<Profile> GetProfileByGuid(Guid profileId)
         {
-            return _profileRepository.GetById(profileId);
+            var profile =await _profileRepository.GetById(profileId);
+            return profile;
         }
 
-        public string GetUserIdByInvitationCode(string invitationCode)
+        public async Task<string> GetUserIdByInvitationCode(string invitationCode)
         {
-            var profile = _profileRepository.Where(x => x.MyInvitationCode == invitationCode).Result.FirstOrDefault();
+            List<Profile> profiles =await _profileRepository.Where(x => x.MyInvitationCode == invitationCode);
+
+            var profile = profiles.FirstOrDefault();
             if (profile != null)
                 return profile.Id.ToString();
 
@@ -163,12 +169,12 @@ namespace AphrieTask.Manager
 
         }
 
-        public int UpdateProfile(Profile input)
+        public async Task<int> UpdateProfile(Profile input)
         {
             // (0) ---> updated succefully
             int updated = 0;
 
-            var savedobj = _profileRepository.GetById(input.Id).Result;
+            var savedobj =await _profileRepository.GetById(input.Id);
 
             if (input.Email != null)
             {
@@ -180,7 +186,9 @@ namespace AphrieTask.Manager
                     return updated;
                 }
 
-                var result = _profileRepository.Where(x => x.Email.ToLower() == input.Email.ToLower()).Result.FirstOrDefault();
+                var profiles =await _profileRepository.Where(x => x.Email.ToLower() == input.Email.ToLower());
+
+                var result = profiles.FirstOrDefault();
                 if (result != null && result.Id != savedobj.Id)
                 {
                     //throw new Exception(ErrorMessagesEnum.EmailAlreadyExisted.ToString());
@@ -205,10 +213,11 @@ namespace AphrieTask.Manager
         }
 
 
-        public bool ChangePassword(PasswordModel passwordModel)
+        public async Task<bool> ChangePassword(PasswordModel passwordModel)
         {
-            var oldPassword = _passwordRepository.Where(p => p.profileId == passwordModel.profileId && p.HashPassword == GetHash(passwordModel.oldPassword)).Result.FirstOrDefault();
+            var oldPasswords =await _passwordRepository.Where(p => p.profileId == passwordModel.profileId && p.HashPassword == GetHash(passwordModel.oldPassword));
 
+            var oldPassword = oldPasswords.FirstOrDefault();
             if (oldPassword != null)
             {
                 try

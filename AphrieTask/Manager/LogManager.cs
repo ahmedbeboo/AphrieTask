@@ -1,4 +1,5 @@
 ﻿using Entities;
+using Entities.Enums;
 using Repository;
 using System;
 using System.Collections.Generic;
@@ -25,5 +26,23 @@ namespace AphrieTask.Manager
             catch { }
         }
 
+        public Log GetLog(LogLevel logLevel,string MSG,string requestInfo,string responseInfo,string userInfo)
+        {
+            try
+            {
+                Log log = new Log();
+                log.CreatedDate = DateTime.Now;
+                log.Level = logLevel;
+                log.requestInfo = requestInfo;
+                log.responseInfo = responseInfo;
+                log.userInfo = userInfo;
+
+                return log;
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 }

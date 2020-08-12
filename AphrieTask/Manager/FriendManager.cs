@@ -48,13 +48,15 @@ namespace AphrieTask.Manager
             return EnglishNumbers;
         }
 
-        public void AddPendingFriendsInvitations(Profile newjoiner)
+        public async void AddPendingFriendsInvitations(Profile newjoiner)
         {
             Guid invitedByGuid;
             bool isGuid = Guid.TryParse(newjoiner.InvitedBy, out invitedByGuid);
             if (isGuid)
             {
-                var invitedByInvitation = _friendInvitationRepository.Where(x => x.SenderId == invitedByGuid && x.PhoneNumber == newjoiner.PhoneNumber).Result.FirstOrDefault();
+                List<FriendInvitation> friendInvitations =await _friendInvitationRepository.Where(x => x.SenderId == invitedByGuid && x.PhoneNumber == newjoiner.PhoneNumber);
+
+                var invitedByInvitation = friendInvitations.FirstOrDefault();
                 if (invitedByInvitation == null)
                 {
                     _friendRepository.Insert(
@@ -67,7 +69,7 @@ namespace AphrieTask.Manager
                 }
             }
 
-            var invitations = _friendInvitationRepository.Where(x => x.PhoneNumber == newjoiner.PhoneNumber).Result;
+            var invitations =await _friendInvitationRepository.Where(x => x.PhoneNumber == newjoiner.PhoneNumber);
             foreach (var invitation in invitations)
             {
                 var friend = new Friend()
@@ -88,9 +90,11 @@ namespace AphrieTask.Manager
             }
         }
 
-        internal int InviteFriend(FriendInvitation input)
+        internal async Task<int> InviteFriend(FriendInvitation input)
         {
-            var invitaionexists = _friendInvitationRepository.Where(x => x.SenderId == input.SenderId && x.PhoneNumber == input.PhoneNumber && x.Processed == false).Result.FirstOrDefault();
+            List<FriendInvitation> friendInvitations =await _friendInvitationRepository.Where(x => x.SenderId == input.SenderId && x.PhoneNumber == input.PhoneNumber && x.Processed == false);
+
+            var invitaionexists = friendInvitations.FirstOrDefault();
             if (invitaionexists == null)
             {
                 input.PhoneNumber = toEnglishNumber(input.PhoneNumber);
@@ -98,8 +102,10 @@ namespace AphrieTask.Manager
                 if (!input.PhoneNumber.StartsWith("+2"))
                     input.PhoneNumber = "+2" + input.PhoneNumber;
 
-                var receiver = _profileRepository.Where(x => (x.PhoneNumber == input.PhoneNumber)).Result.FirstOrDefault();
-                var sender = _profileRepository.GetById(input.SenderId).Result;
+                List<Profile> receiverInfo =await _profileRepository.Where(x => (x.PhoneNumber == input.PhoneNumber));
+                var receiver = receiverInfo.FirstOrDefault();
+
+                var sender =await _profileRepository.GetById(input.SenderId);
                 if (receiver == null)
                 {
                     _friendInvitationRepository.Insert(input);
@@ -115,8 +121,8 @@ namespace AphrieTask.Manager
                         return 7; // same number
                     }
 
-                    var previousSentRequest = _friendRepository.Where(x => x.SenderProfileId == sender.Id && x.receiverProfileId == receiver.Id).Result.ToList();
-                    var previousReceivedRequest = _friendRepository.Where(x => x.SenderProfileId == receiver.Id && x.receiverProfileId == sender.Id).Result.ToList();
+                    var previousSentRequest =await _friendRepository.Where(x => x.SenderProfileId == sender.Id && x.receiverProfileId == receiver.Id);
+                    var previousReceivedRequest =await _friendRepository.Where(x => x.SenderProfileId == receiver.Id && x.receiverProfileId == sender.Id);
 
                     if (previousSentRequest != null && previousSentRequest.Count > 0)
                     {
@@ -238,15 +244,15 @@ namespace AphrieTask.Manager
             return rslt;
         }
 
-        internal void RemoveFriend(Guid id)
+        internal async void RemoveFriend(Guid id)
         {
-            var friend = GetFriendshipById(id).Result;
+            var friend =await GetFriendshipById(id);
             _friendRepository.Delete(friend);
         }
 
-        internal void RemoveFriendInvitation(Guid id)
+        internal async void RemoveFriendInvitation(Guid id)
         {
-            var invitation = GetFriendInvitationById(id).Result;
+            var invitation =await GetFriendInvitationById(id);
             _friendInvitationRepository.Delete(invitation);
         }
 
